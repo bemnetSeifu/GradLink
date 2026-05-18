@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hi-Fi Prototype – GradBridge Ethiopia</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --bg: #f7f4ef;
+    --card: #ffffff;
+    --accent: #e8572a;
+    --accent2: #2a7de8;
+    --muted: #8a8580;
+    --border: #e2ddd6;
+    --green: #1eb87a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  .badge {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    z-index: 999;
+    font-weight: 700;
+  }
+
+  .screen {
+    display: none;
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+    padding-bottom: 90px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.08);
+  }
+  .screen.active { display: block; }
+
+  /* Buttons */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 15px 24px;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    text-align: center;
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #2a2a2a; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .btn-accent {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-accent:hover { background: #d44a20; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,87,42,0.35); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--ink); background: var(--ink); color: #fff; }
+
+  /* Nav */
+  .nav {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    flex: 1;
+  }
+  .logo span { color: var(--accent); }
+  .back-btn {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    width: 36px; height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+  .back-btn:hover { border-color: var(--ink); background: var(--ink); color: #fff; }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 12px 8px;
+    gap: 4px;
+  }
+  .bnav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 6px 4px;
+    border-radius: 10px;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+  }
+  .bnav-item:hover, .bnav-item.active { color: var(--accent); background: rgba(232,87,42,0.06); }
+  .bnav-icon { font-size: 20px; }
+
+  /* Input */
+  .input-wrap { margin-bottom: 16px; }
+  .input-wrap label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  .input-field {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    background: var(--card);
+    outline: none;
+    transition: border-color 0.15s;
+    color: var(--ink);
+  }
+  .input-field:focus { border-color: var(--accent); }
+
+  /* Cards */
+  .job-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .job-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); border-color: transparent; }
+
+  .company-logo {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-right: 6px;
+    margin-top: 6px;
+  }
+  .tag-orange { background: rgba(232,87,42,0.1); color: var(--accent); }
+  .tag-blue { background: rgba(42,125,232,0.1); color: var(--accent2); }
+  .tag-green { background: rgba(30,184,122,0.1); color: var(--green); }
+  .tag-gray { background: #f0ece4; color: var(--muted); }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 20px;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px;
+    border: 1px solid var(--border);
+  }
+  .stat-card .num {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-card .lbl { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .stat-card.accent { background: var(--ink); }
+  .stat-card.accent .num { color: var(--accent); }
+  .stat-card.accent .lbl { color: rgba(255,255,255,0.5); }
+
+  /* Section */
+  .section { padding: 0 20px 20px; }
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-top: 20px;
+  }
+  .section-header h2 { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+  .see-all { font-size: 13px; color: var(--accent); font-weight: 500; cursor: pointer; }
+
+  /* Avatar */
+  .avatar {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #f0a060);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 auto 12px;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    background: var(--border);
+    border-radius: 10px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--accent), #f0a060);
+  }
+
+  /* Hero gradient */
+  .hero-card {
+    margin: 20px;
+    background: var(--ink);
+    border-radius: 20px;
+    padding: 24px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0.15;
+  }
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: 20px;
+    width: 120px; height: 120px;
+    background: var(--accent2);
+    border-radius: 50%;
+    opacity: 0.1;
+  }
+
+  /* Search */
+  .search-bar {
+    margin: 16px 20px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .chip-row {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .chip {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+  }
+  .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* Splash */
+  .splash {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 40px 28px;
+    background: var(--ink);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .splash-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 60%;
+    background: linear-gradient(160deg, #1a1a2e 0%, var(--ink) 100%);
+  }
+  .splash-orb1 {
+    position: absolute;
+    top: 40px; right: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.18;
+    filter: blur(40px);
+  }
+  .splash-orb2 {
+    position: absolute;
+    top: 160px; left: -80px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: var(--accent2);
+    opacity: 0.12;
+    filter: blur(40px);
+  }
+  .splash-content { position: relative; z-index: 2; }
+
+  .mentor-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mentor-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .mentor-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .screen.active { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="badge">HI-FI · MVP</div>
+
+<!-- SCREEN 1: Splash -->
+<div class="screen active" id="s1">
+  <div class="splash">
+    <div class="splash-bg"></div>
+    <div class="splash-orb1"></div>
+    <div class="splash-orb2"></div>
+    <div class="splash-content">
+      <div style="font-family:'Syne',sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:24px;">GradBridge Ethiopia</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:42px;font-weight:800;line-height:1.05;margin-bottom:16px;">Your Career<br>Starts <span style="color:var(--accent);">Here.</span></h1>
+      <p style="font-size:15px;color:rgba(255,255,255,0.55);line-height:1.7;margin-bottom:40px;">Real opportunities at Ethiopia's growing businesses. Build your portfolio, grow your network, launch your career.</p>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <button class="btn btn-accent" onclick="go('s2')">Get Started as a Graduate</button>
+        <button class="btn btn-ghost" style="border-color:rgba(255,255,255,0.2);color:#fff;" onclick="go('s3')">I'm Hiring — SME Sign Up</button>
+      </div>
+      <p style="text-align:center;margin-top:20px;font-size:13px;color:rgba(255,255,255,0.3);">Already have an account? <span style="color:var(--accent);cursor:pointer;" onclick="go('s4')">Sign in</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2: Graduate Onboarding -->
+<div class="screen" id="s2">
+  <div class="nav">
+    <button class="back-btn" onclick="go('s1')">←</button>
+    <div class="logo">Grad<span>Bridge</span></div>
+  </div>
+  <div style="padding:24px 20px 0;">
+    <h1 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:6px;">Create your profile</h1>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:28px;">Help us match you with the right opportunities</p>
+
+    <div class="input-wrap">
+      <label>Full Name</label>
+      <input class="input-field" placeholder="Bemnet Kebede" value="Bemnet Kebede" />
+    </div>
+    <div class="input-wrap">
+      <label>University</label>
+      <input class="input-field" placeholder="Addis Ababa University" value="Addis Ababa University" />
+    </div>
+    <div class="input-wrap">
+      <label>Field of Study</label>
+      <input class="input-field" placeholder="Business Management" value="Business Management" />
+    </div>
+    <div class="input-wrap">
+      <label>Graduation Year</label>
+      <input class="input-field" placeholder="2024" value="2024" />
+    </div>
+
+    <div style="margin-bottom:24px;">
+      <label style="display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:10px;">Your Top Skills</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <span class="chip active">Marketing</span>
+        <span class="chip">Finance</span>
+        <span class="chip active">Research</span>
+        <span class="chip">Design</span>
+        <span class="chip">Tech</span>
+        <span class="chip">Sales</span>
+      </div>
+    </div>
+    <button class="btn btn-accent" onclick="go('s4')">Continue →</button>
+  </div>
+</div>
+
+<!-- SCREEN 3: Employer Onboarding -->
+<div class="screen" id="s3">
+  <div class="nav">
+    <button class="back-btn" onclick="go('s1')">←</button>
+    <div class="logo">Grad<span>Bridge</span></div>
+  </div>
+  <div style="padding:24px 20px 0;">
+    <h1 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:6px;">Set up your SME</h1>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:28px;">Post opportunities and find talented graduates</p>
+
+    <div class="input-wrap">
+      <label>Company Name</label>
+      <input class="input-field" placeholder="Sheger Tech Solutions" value="Sheger Tech Solutions" />
+    </div>
+    <div class="input-wrap">
+      <label>Industry</label>
+      <input class="input-field" placeholder="Technology / IT" value="Technology / IT" />
+    </div>
+    <div class="input-wrap">
+      <label>Team Size</label>
+      <input class="input-field" placeholder="10–50 employees" value="10–50 employees" />
+    </div>
+    <div class="input-wrap">
+      <label>Location in Addis Ababa</label>
+      <input class="input-field" placeholder="Bole Sub-City" value="Bole Sub-City" />
+    </div>
+    <div class="input-wrap">
+      <label>What kind of help do you need?</label>
+      <input class="input-field" placeholder="Marketing, Admin, Finance..." value="Marketing & Business Development" />
+    </div>
+    <button class="btn btn-accent" onclick="go('s5')">Create SME Account →</button>
+  </div>
+</div>
+
+<!-- SCREEN 4: Graduate Home -->
+<div class="screen" id="s4">
+  <div class="nav" style="padding-bottom:12px;">
+    <div style="flex:1;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:2px;">Good morning,</div>
+      <div class="logo" style="font-size:18px;">Bemnet 👋</div>
+    </div>
+    <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#f0a060);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;">BK</div>
+  </div>
+
+  <div class="hero-card">
+    <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:8px;position:relative;z-index:1;">Profile Completion</div>
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;position:relative;z-index:1;">72% Complete</div>
+    <div class="progress-bar" style="margin-bottom:12px;position:relative;z-index:1;"><div class="progress-fill" style="width:72%"></div></div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.45);position:relative;z-index:1;">Add your CV to unlock more matches</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card accent">
+      <div class="num">24</div>
+      <div class="lbl">Matched Roles</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:var(--green);">8</div>
+      <div class="lbl">Applied</div>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <span>🔍</span> Search roles, companies...
+  </div>
+
+  <div class="chip-row">
+    <div class="chip active">All</div>
+    <div class="chip">Internship</div>
+    <div class="chip">Part-time</div>
+    <div class="chip">Freelance</div>
+    <div class="chip">Full-time</div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Recommended for You</h2>
+      <span class="see-all">See all</span>
+    </div>
+
+    <div class="job-card" onclick="go('s6')">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div class="company-logo" style="background:rgba(232,87,42,0.1);">🚀</div>
+        <div style="flex:1;">
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:2px;">Junior Marketing Assistant</div>
+          <div style="font-size:13px;color:var(--muted);">Sheger Tech Solutions · Bole</div>
+          <div>
+            <span class="tag tag-orange">Internship</span>
+            <span class="tag tag-blue">Marketing</span>
+            <span class="tag tag-gray">Birr 2,500/mo</span>
+          </div>
+        </div>
+        <div style="color:var(--muted);font-size:18px;">›</div>
+      </div>
+    </div>
+
+    <div class="job-card">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div class="company-logo" style="background:rgba(42,125,232,0.1);">💰</div>
+        <div style="flex:1;">
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:2px;">Finance Trainee</div>
+          <div style="font-size:13px;color:var(--muted);">Habesha Micro Finance · Piazza</div>
+          <div>
+            <span class="tag tag-blue">Part-time</span>
+            <span class="tag tag-green">Finance</span>
+          </div>
+        </div>
+        <div style="color:var(--muted);font-size:18px;">›</div>
+      </div>
+    </div>
+
+    <div class="job-card">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div class="company-logo" style="background:rgba(30,184,122,0.1);">📊</div>
+        <div style="flex:1;">
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:2px;">Business Dev Intern</div>
+          <div style="font-size:13px;color:var(--muted);">Kifiya Financial Tech · Sarbet</div>
+          <div>
+            <span class="tag tag-green">Freelance</span>
+            <span class="tag tag-gray">Remote OK</span>
+          </div>
+        </div>
+        <div style="color:var(--muted);font-size:18px;">›</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Featured Mentors</h2>
+      <span class="see-all">See all</span>
+    </div>
+
+    <div class="mentor-card">
+      <div class="mentor-avatar" style="background:rgba(232,87,42,0.1);">👩‍💼</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:14px;">Sara Haile</div>
+        <div style="font-size:12px;color:var(--muted);">Marketing Lead · Ethio Telecom</div>
+      </div>
+      <span class="tag tag-orange" style="margin:0;">Book</span>
+    </div>
+
+    <div class="mentor-card">
+      <div class="mentor-avatar" style="background:rgba(42,125,232,0.1);">👨‍💻</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:14px;">Yonas Tadesse</div>
+        <div style="font-size:12px;color:var(--muted);">Software Engineer · iCog Labs</div>
+      </div>
+      <span class="tag tag-blue" style="margin:0;">Book</span>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bnav-item active"><div class="bnav-icon">🏠</div>Home</div>
+    <div class="bnav-item"><div class="bnav-icon">🔍</div>Explore</div>
+    <div class="bnav-item"><div class="bnav-icon">📋</div>Applied</div>
+    <div class="bnav-item"><div class="bnav-icon">💬</div>Messages</div>
+    <div class="bnav-item" onclick="go('s7')"><div class="bnav-icon">👤</div>Profile</div>
+  </div>
+</div>
+
+<!-- SCREEN 5: Employer Dashboard -->
+<div class="screen" id="s5">
+  <div class="nav">
+    <button class="back-btn" onclick="go('s1')">←</button>
+    <div class="logo">SME <span>Dashboard</span></div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card accent">
+      <div class="num">3</div>
+      <div class="lbl">Active Posts</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:var(--accent);">17</div>
+      <div class="lbl">Total Applicants</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:var(--green);">5</div>
+      <div class="lbl">Shortlisted</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:var(--accent2);">2</div>
+      <div class="lbl">Hired</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Your Opportunities</h2>
+      <span class="see-all" onclick="go('s1')">+ Post New</span>
+    </div>
+
+    <div class="job-card">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div class="company-logo" style="background:rgba(232,87,42,0.1);">🚀</div>
+        <div style="flex:1;">
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:2px;">Junior Marketing Assistant</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">12 applicants · Posted 3 days ago</div>
+          <span class="tag tag-green">● Open</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="job-card">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div class="company-logo" style="background:rgba(42,125,232,0.1);">📋</div>
+        <div style="flex:1;">
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:2px;">Admin & Office Intern</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">5 applicants · Posted 1 week ago</div>
+          <span class="tag tag-green">● Open</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="go('s1')">+ Post a New Opportunity</button>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="bnav-item active"><div class="bnav-icon">🏠</div>Home</div>
+    <div class="bnav-item"><div class="bnav-icon">📋</div>Posts</div>
+    <div class="bnav-item"><div class="bnav-icon">👥</div>Applicants</div>
+    <div class="bnav-item"><div class="bnav-icon">💬</div>Messages</div>
+    <div class="bnav-item"><div class="bnav-icon">⚙️</div>Settings</div>
+  </div>
+</div>
+
+<!-- SCREEN 6: Job Detail -->
+<div class="screen" id="s6">
+  <div class="nav">
+    <button class="back-btn" onclick="go('s4')">←</button>
+    <div style="flex:1;"></div>
+    <span style="font-size:22px;cursor:pointer;">🔖</span>
+  </div>
+
+  <div style="padding:0 20px 20px;">
+    <div class="company-logo" style="background:rgba(232,87,42,0.1);width:56px;height:56px;font-size:24px;border-radius:14px;margin-bottom:16px;">🚀</div>
+    <h1 style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px;line-height:1.2;">Junior Marketing Assistant</h1>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:16px;">Sheger Tech Solutions · Bole, Addis Ababa</p>
+    <div style="margin-bottom:24px;">
+      <span class="tag tag-orange">Internship</span>
+      <span class="tag tag-blue">Marketing</span>
+      <span class="tag tag-gray">Birr 2,500/mo</span>
+      <span class="tag tag-green">Remote Hybrid</span>
+    </div>
+
+    <div style="background:var(--card);border-radius:16px;padding:18px;border:1px solid var(--border);margin-bottom:16px;">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;">About This Role</div>
+      <p style="font-size:14px;line-height:1.7;color:#444;">We're looking for a motivated graduate to join our marketing team. You'll assist with social media management, content creation, market research, and client engagement campaigns. No prior experience needed — just enthusiasm and a willingness to learn.</p>
+    </div>
+
+    <div style="background:var(--card);border-radius:16px;padding:18px;border:1px solid var(--border);margin-bottom:16px;">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;">What You'll Gain</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--green);">✓</span> Real portfolio projects</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--green);">✓</span> Mentorship from senior team</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--green);">✓</span> Professional reference letter</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--green);">✓</span> Monthly stipend</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card);border-radius:16px;padding:18px;border:1px solid var(--border);margin-bottom:24px;">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;">Requirements</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--accent);">•</span> Any university degree</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--accent);">•</span> Strong written Amharic & English</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--accent);">•</span> Basic computer skills</div>
+      </div>
+    </div>
+
+    <button class="btn btn-accent" onclick="go('s4')">Apply Now — It's Free</button>
+    <button class="btn btn-ghost" style="margin-top:10px;" onclick="go('s4')">← Back to Dashboard</button>
+  </div>
+</div>
+
+<!-- SCREEN 7: Profile -->
+<div class="screen" id="s7">
+  <div class="nav">
+    <button class="back-btn" onclick="go('s4')">←</button>
+    <div class="logo">My <span>Profile</span></div>
+  </div>
+  <div style="padding:24px 20px;text-align:center;border-bottom:1px solid var(--border);margin-bottom:4px;">
+    <div class="avatar">BK</div>
+    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;">Bemnet Kebede</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px;">Business Management · AAU · 2024</div>
+    <div style="display:flex;justify-content:center;gap:8px;margin-top:12px;">
+      <span class="tag tag-orange">Marketing</span>
+      <span class="tag tag-blue">Research</span>
+      <span class="tag tag-green">Finance</span>
+    </div>
+  </div>
+  <div class="section" style="padding-top:20px;">
+    <div style="background:var(--card);border-radius:16px;padding:18px;border:1px solid var(--border);margin-bottom:12px;">
+      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;">Profile Strength</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:72%"></div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;">72% — Add CV to reach 100%</div>
+    </div>
+    <button class="btn btn-primary" style="margin-bottom:10px;">Upload CV / Resume</button>
+    <button class="btn btn-ghost" onclick="go('s4')">← Back to Home</button>
+  </div>
+  <div class="bottom-nav">
+    <div class="bnav-item" onclick="go('s4')"><div class="bnav-icon">🏠</div>Home</div>
+    <div class="bnav-item"><div class="bnav-icon">🔍</div>Explore</div>
+    <div class="bnav-item"><div class="bnav-icon">📋</div>Applied</div>
+    <div class="bnav-item"><div class="bnav-icon">💬</div>Messages</div>
+    <div class="bnav-item active"><div class="bnav-icon">👤</div>Profile</div>
+  </div>
+</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.chip').forEach(c => {
+  c.addEventListener('click', function() {
+    this.classList.toggle('active');
+  });
+});
+</script>
+</body>
+</html>
